@@ -1,0 +1,6 @@
+{
+  "name": "TaskFlow – Smart To-Do List",
+  "description": "A clean, modern daily task manager with drag-and-drop sorting, deadline notifications, LocalStorage persistence, and college practical lab documentation.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

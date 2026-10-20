@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow – Smart To-Do List</title>
+  <meta name="description" content="A modern, responsive daily task manager with drag-and-drop sorting, deadline notifications, LocalStorage persistence, and college practical lab documentation.">
+  <meta property="og:title" content="TaskFlow – Smart To-Do List">
+  <meta property="og:description" content="A modern daily task manager with drag-and-drop sorting, deadline push notifications, and LocalStorage persistence.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- Google Fonts: Inter for clean, legible typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Standalone Stylesheet -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- Main Application Wrapper -->
+  <div class="app-container">
+
+    <!-- 1. Header Card -->
+    <header class="header-card">
+      <div class="header-top">
+        <div class="brand-wrapper">
+          <div class="brand-icon">⚡</div>
+          <div>
+            <h1 class="brand-title">
+              TaskFlow
+              <span class="badge-pill">Smart To-Do</span>
+            </h1>
+          </div>
+        </div>
+
+        <!-- Header Actions: Viva Lab Manual & Alerts -->
+        <div class="header-actions">
+          <button type="button" class="btn btn-secondary btn-sm" id="loadSamplesBtn" title="Load sample demo tasks">
+            📋 Demo Tasks
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="enableAlertsBtn" title="Enable browser deadline notifications">
+            🔔 Enable Alerts
+          </button>
+          <button type="button" class="btn btn-accent btn-sm" id="openLabModalBtn" title="View College Practical Lab Report">
+            📖 Lab Manual &amp; Viva
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="openDeployModalBtn" title="GitHub Pages Deployment Guide">
+            🚀 Deploy Guide
+          </button>
+        </div>
+      </div>
+
+      <!-- Motivational Tagline -->
+      <div class="tagline-container">
+        <span class="tagline-icon">💡</span>
+        <span id="quoteText">“Small daily improvements over time lead to stunning results.”</span>
+        <button type="button" class="quote-refresh-btn" id="refreshQuoteBtn" title="Get new motivational quote" aria-label="Refresh quote">
+          ↻
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. Statistics & Progress Meter -->
+    <section class="stats-grid" aria-label="Task Statistics">
+      <div class="stat-box total">
+        <div class="stat-header">
+          <span>Total Tasks</span>
+          <span>📁</span>
+        </div>
+        <div class="stat-value" id="totalCount">0</div>
+      </div>
+
+      <div class="stat-box pending">
+        <div class="stat-header">
+          <span>Pending</span>
+          <span>⏳</span>
+        </div>
+        <div class="stat-value" id="pendingCount">0</div>
+      </div>
+
+      <div class="stat-box completed">
+        <div class="stat-header">
+          <span>Completed</span>
+          <span>✅</span>
+        </div>
+        <div class="stat-value" id="completedCount">0</div>
+      </div>
+
+      <div class="stat-box rate">
+        <div class="stat-header">
+          <span>Progress</span>
+          <span>🎯</span>
+        </div>
+        <div class="stat-value" id="progressPercent">0%</div>
+      </div>
+
+      <!-- Progress Track -->
+      <div class="progress-container">
+        <div class="progress-label-row">
+          <span>Overall Completion Rate</span>
+          <span id="progressText">Keep going!</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Task Input Card (Form Input Handling & Validation) -->
+    <section class="input-card" aria-label="Add Task Form">
+      <div class="input-group-main">
+        <input 
+          type="text" 
+          id="taskInput" 
+          class="text-input" 
+          placeholder="What do you need to accomplish today? (e.g. Finish CN Lab Report)"
+          autocomplete="off"
+          aria-label="Task description input"
+        />
+        <button type="button" class="btn btn-primary" id="addTaskBtn">
+          <span>＋</span>
+          <span>Add Task</span>
+        </button>
+      </div>
+
+      <!-- Validation Error Message Alert -->
+      <div class="error-message" id="inputErrorMsg" role="alert">
+        <span>⚠️</span>
+        <span>Please enter a valid task description (cannot be empty or spaces only).</span>
+      </div>
+
+      <!-- Extended Task Options: Priority, Category, Deadline -->
+      <div class="input-options-row">
+        <!-- Priority Selector -->
+        <div class="option-group">
+          <label for="prioritySelect">Priority:</label>
+          <select id="prioritySelect" class="select-input">
+            <option value="low">🟢 Low</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="high">🔴 High</option>
+          </select>
+        </div>
+
+        <!-- Category Selector -->
+        <div class="option-group">
+          <label for="categorySelect">Category:</label>
+          <select id="categorySelect" class="select-input">
+            <option value="academic" selected>📚 Academic</option>
+            <option value="project">💻 Project</option>
+            <option value="personal">🌿 Personal</option>
+            <option value="urgent">⚡ Urgent</option>
+          </select>
+        </div>
+
+        <!-- Deadline Picker -->
+        <div class="option-group">
+          <label for="deadlineInput">Deadline:</label>
+          <input type="datetime-local" id="deadlineInput" class="date-input" aria-label="Task deadline date and time" />
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Filter, Search & Sorting Controls -->
+    <section class="controls-card" aria-label="Filter and Sort Controls">
+      <!-- Filter Tabs -->
+      <div class="filter-tabs" role="tablist">
+        <button type="button" class="tab-btn active" data-filter="all" role="tab">
+          All <span class="tab-count" id="filterAllCount">0</span>
+        </button>
+        <button type="button" class="tab-btn" data-filter="pending" role="tab">
+          Pending <span class="tab-count" id="filterPendingCount">0</span>
+        </button>
+        <button type="button" class="tab-btn" data-filter="completed" role="tab">
+          Completed <span class="tab-count" id="filterCompletedCount">0</span>
+        </button>
+      </div>
+
+      <!-- Live Search & Sort -->
+      <div class="search-and-sort">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="Search tasks..." 
+            aria-label="Search tasks"
+          />
+        </div>
+
+        <select id="sortSelect" class="select-input" aria-label="Sort tasks">
+          <option value="default">↕️ Manual (Drag &amp; Drop)</option>
+          <option value="deadline">⏰ Due Date</option>
+          <option value="priority">🔥 Priority</option>
+          <option value="newest">🕒 Newest First</option>
+        </select>
+
+        <button type="button" class="btn btn-danger btn-sm" id="clearAllBtn" title="Clear all tasks">
+          🗑️ Clear All
+        </button>
+      </div>
+    </section>
+
+    <!-- 5. Task List Container -->
+    <main>
+      <div class="task-list" id="taskList" aria-label="List of tasks">
+        <!-- Task cards dynamically injected via script.js -->
+      </div>
+
+      <!-- Friendly Empty State -->
+      <div class="empty-state" id="emptyState" aria-live="polite">
+        <div class="empty-illustration">📝</div>
+        <h3 class="empty-title">No tasks found!</h3>
+        <p class="empty-subtitle">Your task list is clean and clear. Add a task above to start organizing your day.</p>
+      </div>
+    </main>
+
+    <!-- 6. Project Footer -->
+    <footer class="footer-bar">
+      <div>
+        <strong>TaskFlow</strong> – College UI / Computer Networks Practical Micro-Project
+      </div>
+      <div class="footer-links">
+        <a class="footer-link" id="footerLabLink" onclick="document.getElementById('labModal').classList.add('open')">Lab Report &amp; Viva Q&amp;A</a>
+        <span>•</span>
+        <a class="footer-link" id="footerDeployLink" onclick="document.getElementById('deployModal').classList.add('open')">GitHub Pages Guide</a>
+      </div>
+    </footer>
+
+  </div> <!-- End .app-container -->
+
+  <!-- ========================================================================
+       MODAL 1: Confirm Clear All
+       ======================================================================== -->
+  <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirmModalTitle">⚠️ Clear All Tasks</h3>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete all tasks from LocalStorage? This action cannot be reversed.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: Edit Task Modal
+       ======================================================================== -->
+  <div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="editModalTitle">✏️ Edit Task</h3>
+      </div>
+      <div class="modal-body">
+        <div>
+          <label for="editTaskInput" style="font-size:13px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:4px;">Task Description:</label>
+          <input type="text" id="editTaskInput" class="text-input" style="width:100%;" />
+        </div>
+
+        <div class="error-message" id="editErrorMsg" role="alert">
+          <span>⚠️</span>
+          <span>Task description cannot be empty.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label for="editPrioritySelect" style="font-size:13px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:4px;">Priority:</label>
+            <select id="editPrioritySelect" class="select-input" style="width:100%;">
+              <option value="low">🟢 Low</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="high">🔴 High</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="editCategorySelect" style="font-size:13px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:4px;">Category:</label>
+            <select id="editCategorySelect" class="select-input" style="width:100%;">
+              <option value="academic">📚 Academic</option>
+              <option value="project">💻 Project</option>
+              <option value="personal">🌿 Personal</option>
+              <option value="urgent">⚡ Urgent</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="editDeadlineInput" style="font-size:13px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:4px;">Deadline:</label>
+          <input type="datetime-local" id="editDeadlineInput" class="date-input" style="width:100%;" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: College Practical Lab Manual & Viva Documentation
+       ======================================================================== -->
+  <div class="modal-overlay" id="labModal" role="dialog" aria-modal="true" aria-labelledby="labModalTitle">
+    <div class="modal-box modal-large">
+      <div class="modal-header">
+        <h3 class="modal-title" id="labModalTitle">🎓 College Practical Lab Manual &amp; Viva Documentation</h3>
+        <button type="button" class="action-btn" id="closeLabModalBtn" aria-label="Close modal">✕</button>
+      </div>
+
+      <!-- Navigation tabs inside documentation modal -->
+      <nav class="modal-tabs" aria-label="Documentation sections">
+        <button type="button" class="modal-tab-btn active" data-target="doc-aim">1. Aim &amp; Objectives</button>
+        <button type="button" class="modal-tab-btn" data-target="doc-req">2. Requirements &amp; Theory</button>
+        <button type="button" class="modal-tab-btn" data-target="doc-algo">3. Algorithm</button>
+        <button type="button" class="modal-tab-btn" data-target="doc-tests">4. Test Cases</button>
+        <button type="button" class="modal-tab-btn" data-target="doc-result">5. Result &amp; Conclusion</button>
+        <button type="button" class="modal-tab-btn" data-target="doc-viva">6. Viva Questions &amp; Answers</button>
+        <button type="button" class="modal-tab-btn" data-target="doc-code">7. Source Code Files</button>
+      </nav>
+
+      <div class="modal-body">
+
+        <!-- Section 1: Aim & Objectives -->
+        <div class="doc-section active" id="doc-aim">
+          <h3>📌 1. Aim of the Project</h3>
+          <p>
+            To design, develop, and test an interactive, responsive daily task manager web application titled 
+            <strong>“TaskFlow – Smart To-Do List”</strong> using standard HTML5, CSS3, and JavaScript, demonstrating 
+            rigorous client-side form validation, LocalStorage state persistence, HTML5 Drag-and-Drop item reordering, 
+            and deadline alert notifications.
+          </p>
+
+          <h3>🎯 2. Project Objectives</h3>
+          <ul>
+            <li><strong>Input Validation &amp; Error Handling:</strong> Prevent empty or whitespace-only submissions and deliver immediate visual feedback.</li>
+            <li><strong>Browser Data Persistence:</strong> Implement the Web Storage API (<code>localStorage</code>) to maintain state across browser reloads without server-side database dependencies.</li>
+            <li><strong>Interactive User Experience:</strong> Implement real-time task filtering (All, Pending, Completed), live keyword search, and dynamic task counters.</li>
+            <li><strong>HTML5 Drag-and-Drop API:</strong> Enable intuitive manual task reordering via browser-native drag events.</li>
+            <li><strong>Web Notification API:</strong> Check scheduled deadlines and trigger push alerts and synthesized Web Audio notifications.</li>
+            <li><strong>Modern Aesthetic Standards:</strong> Develop a clean, mobile-responsive layout utilizing modern CSS variables, flexbox, and CSS grid.</li>
+          </ul>
+        </div>
+
+        <!-- Section 2: Requirements & Theory -->
+        <div class="doc-section" id="doc-req">
+          <h3>💻 3. Software &amp; Hardware Requirements</h3>
+          <ul>
+            <li><strong>Operating System:</strong> Any OS (Windows 10/11, macOS, Ubuntu/Linux).</li>
+            <li><strong>Web Browser:</strong> Google Chrome, Mozilla Firefox, Microsoft Edge, or Apple Safari (supporting ES6, LocalStorage, and HTML5 Drag &amp; Drop).</li>
+            <li><strong>Editor / IDE:</strong> Visual Studio Code, Sublime Text, or Notepad++.</li>
+            <li><strong>Hardware:</strong> Minimum 2 GB RAM, Dual-core CPU, 100 MB free disk space.</li>
+          </ul>
+
+          <h3>📚 4. Brief Technical Theory</h3>
+          <p>
+            <strong>A. Document Object Model (DOM) Manipulation:</strong> The browser parses HTML into an object tree. JavaScript interacts with this tree using methods such as <code>document.getElementById()</code>, <code>createElement()</code>, and <code>appendChild()</code> to dynamically add, edit, and delete task cards without reloading the page.
+          </p>
+          <p>
+            <strong>B. Web Storage API (LocalStorage):</strong> Unlike transient session memory, <code>localStorage</code> provides persistent key-value client storage with ~5MB capacity. Data is serialized with <code>JSON.stringify()</code> before storage and parsed with <code>JSON.parse()</code> upon retrieval.
+          </p>
+          <p>
+            <strong>C. HTML5 Drag and Drop API:</strong> Elements marked with <code>draggable="true"</code> fire lifecycle events including <code>dragstart</code>, <code>dragover</code>, <code>dragleave</code>, and <code>drop</code>. The <code>dataTransfer</code> object passes identifier tokens to recalculate array positions.
+          </p>
+          <p>
+            <strong>D. Browser Notification API:</strong> Facilitates desktop notifications outside the active tab via <code>Notification.requestPermission()</code> and <code>new Notification(title, options)</code>.
+          </p>
+        </div>
+
+        <!-- Section 3: Algorithm -->
+        <div class="doc-section" id="doc-algo">
+          <h3>⚙️ 5. Algorithms</h3>
+          
+          <p><strong>Algorithm 1: Adding a Task with Input Validation</strong></p>
+          <ol>
+            <li><strong>Start</strong> when user clicks "Add Task" or presses the Enter key.</li>
+            <li>Read <code>taskInput.value</code> and apply <code>.trim()</code> to strip leading and trailing whitespace.</li>
+            <li><strong>Condition Check:</strong> If <code>trimmedText === ""</code>:
+              <ul>
+                <li>Display validation warning: <em>"Task description cannot be empty or contain only spaces."</em></li>
+                <li>Add CSS class <code>input-error</code> to trigger visual shake animation.</li>
+                <li>Set focus back to <code>taskInput</code> and <strong>Exit</strong> without modifying state.</li>
+              </ul>
+            </li>
+            <li>If valid, generate unique identifier <code>id = 'task_' + timestamp + randomKey</code>.</li>
+            <li>Construct task object: <code>{ id, text, completed: false, priority, category, deadline, createdAt }</code>.</li>
+            <li>Prepend object to <code>tasks</code> array via <code>tasks.unshift(newTask)</code>.</li>
+            <li>Serialize and persist: <code>localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))</code>.</li>
+            <li>Reset form input values, display success toast notification, and call <code>renderTasks()</code>.</li>
+            <li><strong>End</strong>.</li>
+          </ol>
+
+          <p><strong>Algorithm 2: Reordering via HTML5 Drag and Drop</strong></p>
+          <ol>
+            <li>On <code>dragstart</code>, record source task ID into <code>draggedTaskId</code>.</li>
+            <li>On <code>dragover</code>, invoke <code>e.preventDefault()</code> to permit dropping and add hover highlight class.</li>
+            <li>On <code>drop</code>, identify target task ID from <code>card.dataset.id</code>.</li>
+            <li>Find array indexes: <code>fromIndex</code> and <code>toIndex</code>.</li>
+            <li>Splice task from <code>fromIndex</code> and re-insert at <code>toIndex</code>.</li>
+            <li>Invoke <code>saveTasksToStorage()</code> and <code>renderTasks()</code>.</li>
+          </ol>
+        </div>
+
+        <!-- Section 4: Test Cases -->
+        <div class="doc-section" id="doc-tests">
+          <h3>🧪 6. Test Cases &amp; Verification Matrix</h3>
+          <div style="overflow-x:auto;">
+            <table class="test-cases-table">
+              <thead>
+                <tr>
+                  <th>Test ID</th>
+                  <th>Test Scenario</th>
+                  <th>Input Data</th>
+                  <th>Expected Behavior</th>
+                  <th>Actual Result</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>TC-01</strong></td>
+                  <td>Empty string validation</td>
+                  <td>Click "Add Task" with empty input</td>
+                  <td>Error message displayed, input shakes, task not added</td>
+                  <td>Red banner shown, shake animated, list unchanged</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-02</strong></td>
+                  <td>Space-only input validation</td>
+                  <td><code>"      "</code> (spaces only)</td>
+                  <td>Error message displayed, space-only task rejected</td>
+                  <td>Rejected with validation warning, input shakes</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-03</strong></td>
+                  <td>Valid task creation</td>
+                  <td><code>"Complete CN Practical"</code></td>
+                  <td>Task card rendered, success toast shown, counters updated</td>
+                  <td>Card appeared at top, toast confirmed, counter incremented</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-04</strong></td>
+                  <td>Toggle completion state</td>
+                  <td>Click checkbox on task</td>
+                  <td>Strikethrough text applied, status toggled, counters updated</td>
+                  <td>Completed style applied, pending count decremented</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-05</strong></td>
+                  <td>Edit existing task</td>
+                  <td>Click edit icon, modify text to <code>"Updated Task"</code></td>
+                  <td>Modal opens with prior text, updates card upon save</td>
+                  <td>Task card updated and saved to storage</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-06</strong></td>
+                  <td>Delete single task</td>
+                  <td>Click trash button on card</td>
+                  <td>Task removed from UI, storage updated, counters decremented</td>
+                  <td>Smooth fade-out, card removed from array &amp; storage</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-07</strong></td>
+                  <td>Status filtering</td>
+                  <td>Click "Pending" and "Completed" filter tabs</td>
+                  <td>Displays only tasks matching selected state</td>
+                  <td>Instant accurate filtering with dynamic count badge</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-08</strong></td>
+                  <td>LocalStorage persistence</td>
+                  <td>Reload browser window (F5 / Refresh)</td>
+                  <td>Previously entered tasks remain intact</td>
+                  <td>All tasks loaded identically from LocalStorage</td>
+                  <td><span class="status-pass">PASS</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 5: Result & Conclusion -->
+        <div class="doc-section" id="doc-result">
+          <h3>📈 7. Expected Output</h3>
+          <p>
+            The web application renders an aesthetically balanced cream-themed workspace featuring responsive task statistics, an interactive task composition bar, dynamic filter controls, drag-and-drop sortable task items with distinct priority badges and countdown deadlines, and an informative empty state.
+          </p>
+
+          <h3>🏆 8. Result</h3>
+          <p>
+            The <strong>“TaskFlow – Smart To-Do List”</strong> web application was successfully conceptualized, coded, and verified. All functional requirements—including strict input validation, client-side CRUD handling, LocalStorage synchronization, and responsive design—were implemented and verified through test cases.
+          </p>
+
+          <h3>📝 9. Conclusion</h3>
+          <p>
+            This micro-project demonstrated the power and simplicity of fundamental web technologies (HTML5, CSS3, Vanilla JavaScript) without reliance on heavy frameworks. Key technical competencies acquired include DOM lifecycle manipulation, asynchronous user interaction handling, browser storage serialization, and defensive UI input validation.
+          </p>
+        </div>
+
+        <!-- Section 6: Viva Questions & Answers -->
+        <div class="doc-section" id="doc-viva">
+          <h3>💬 10. Top 5 Viva Questions &amp; Model Answers</h3>
+          
+          <div class="viva-card">
+            <div class="viva-question">Q1: What is the difference between LocalStorage and SessionStorage?</div>
+            <div class="viva-answer">
+              <strong>Answer:</strong> Both are part of the Web Storage API and store data as key-value pairs (~5MB per origin). However, <code>localStorage</code> persists indefinitely until explicitly cleared by the user or script, whereas <code>sessionStorage</code> is purged as soon as the browser tab or session is closed.
+            </div>
+          </div>
+
+          <div class="viva-card">
+            <div class="viva-question">Q2: How do you prevent empty tasks or space-only input in JavaScript?</div>
+            <div class="viva-answer">
+              <strong>Answer:</strong> By reading the input string and calling the built-in <code>trim()</code> method (e.g., <code>const cleanText = taskInput.value.trim()</code>). If <code>cleanText === ""</code>, the submission is rejected, preventing users from creating blank or accidental whitespace entries.
+            </div>
+          </div>
+
+          <div class="viva-card">
+            <div class="viva-question">Q3: What is Event Delegation and why is it useful in a dynamic to-do list?</div>
+            <div class="viva-answer">
+              <strong>Answer:</strong> Event Delegation is a technique where a single event listener is attached to a parent element rather than attaching individual listeners to every dynamically created child. Through event bubbling (capturing/target phase), the parent inspects <code>event.target</code> to handle actions efficiently with lower memory overhead.
+            </div>
+          </div>
+
+          <div class="viva-card">
+            <div class="viva-question">Q4: How does the HTML5 Drag and Drop API function in TaskFlow?</div>
+            <div class="viva-answer">
+              <strong>Answer:</strong> Task cards are given the attribute <code>draggable="true"</code>. On <code>dragstart</code>, the dragged task's ID is stored. When hovered over another task (<code>dragover</code>, with <code>e.preventDefault()</code>), a visual drop marker is shown. On <code>drop</code>, the array items are spliced and repositioned, followed by saving to LocalStorage.
+            </div>
+          </div>
+
+          <div class="viva-card">
+            <div class="viva-question">Q5: How does the Web Notification API work and why is explicit permission mandatory?</div>
+            <div class="viva-answer">
+              <strong>Answer:</strong> The Web Notification API allows web pages to display system-level alerts outside the viewport. For security and user privacy, browsers enforce an explicit opt-in flow via <code>Notification.requestPermission()</code>. Notifications are only dispatched if the user explicitly grants approval.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 7: Source Code & Download -->
+        <div class="doc-section" id="doc-code">
+          <h3>📂 11. Complete Project Source Code Files</h3>
+          <p>All 3 project files (<code>index.html</code>, <code>style.css</code>, <code>script.js</code>) are standalone and ready to run locally or upload to GitHub Pages.</p>
+          
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="downloadAllFiles()">
+              📥 Download Complete Project (All 3 Files)
+            </button>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header-bar">
+              <span>📄 index.html</span>
+              <span>Semantic HTML5 Structure</span>
+            </div>
+            <code>&lt;!-- See index.html in project root directory --&gt;</code>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header-bar">
+              <span>🎨 style.css</span>
+              <span>Cream &amp; Purple Theme Stylesheet</span>
+            </div>
+            <code>/* See style.css in project root directory */</code>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header-bar">
+              <span>⚡ script.js</span>
+              <span>Vanilla JavaScript Logic &amp; LocalStorage</span>
+            </div>
+            <code>// See script.js in project root directory</code>
+          </div>
+        </div>
+
+      </div> <!-- End .modal-body -->
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('labModal').classList.remove('open')">Close Lab Manual</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 4: Free GitHub Pages Deployment Step-by-Step Guide
+       ======================================================================== -->
+  <div class="modal-overlay" id="deployModal" role="dialog" aria-modal="true" aria-labelledby="deployModalTitle">
+    <div class="modal-box modal-large">
+      <div class="modal-header">
+        <h3 class="modal-title" id="deployModalTitle">🚀 Step-by-Step GitHub Pages Free Deployment Guide</h3>
+        <button type="button" class="action-btn" id="closeDeployModalBtn" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p>Deploying <strong>TaskFlow</strong> on GitHub Pages is 100% free and takes less than 2 minutes. Follow these exact steps:</p>
+
+        <h3>📁 1. Project Directory Structure</h3>
+        <p>Ensure your folder on your computer contains the three files in the root folder without subfolders:</p>
+        <div class="code-block">
+my-taskflow-app/
+├── index.html    (Main HTML file)
+├── style.css     (CSS stylesheet)
+└── script.js     (JavaScript logic)
+        </div>
+
+        <h3>📦 2. Create a Free GitHub Repository</h3>
+        <ol>
+          <li>Open <a href="https://github.com" target="_blank" style="color:var(--primary); font-weight:600;">github.com</a> and sign in (or create a free student account).</li>
+          <li>Click the <strong>"+"</strong> icon at the top-right and select <strong>New repository</strong>.</li>
+          <li>Set the <strong>Repository name</strong> to <code>taskflow</code> (or any name you prefer).</li>
+          <li>Select <strong>Public</strong> (GitHub Pages is free for all public repositories).</li>
+          <li>Leave "Initialize with a README" unchecked, then click <strong>Create repository</strong>.</li>
+        </ol>
+
+        <h3>📤 3. Upload the 3 Files</h3>
+        <ol>
+          <li>On the newly created repository page, click the link: <strong>"uploading an existing file"</strong>.</li>
+          <li>Drag and drop the three files: <code>index.html</code>, <code>style.css</code>, and <code>script.js</code> into the box.</li>
+          <li>Under <em>Commit changes</em>, enter <code>Initial release of TaskFlow</code> and click <strong>Commit changes</strong>.</li>
+        </ol>
+
+        <h3>⚙️ 4. Enable GitHub Pages Hosting</h3>
+        <ol>
+          <li>In your repository, click the <strong>Settings</strong> tab at the top.</li>
+          <li>In the left sidebar menu, click on <strong>Pages</strong> (under "Code and automation").</li>
+          <li>Under <strong>Build and deployment &gt; Source</strong>, ensure <strong>Deploy from a branch</strong> is selected.</li>
+          <li>Under <strong>Branch</strong>, choose <code>main</code> (or <code>master</code>) from the dropdown, leave the folder as <code>/ (root)</code>, and click <strong>Save</strong>.</li>
+        </ol>
+
+        <h3>🌐 5. Obtain Your Live Website URL</h3>
+        <p>
+          GitHub will automatically build your site. Wait approximately 30 to 60 seconds and refresh the Pages settings screen. You will see a banner:
+        </p>
+        <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:12px; color:#065f46; font-weight:600; font-size:14px; margin-bottom:12px;">
+          ✓ Your site is live at: <code>https://&lt;your-github-username&gt;.github.io/taskflow/</code>
+        </div>
+        <p>You can copy this link and paste it directly into your college practical report or send it to your professor during viva evaluation!</p>
+
+        <h3>💡 Pro Viva Tip</h3>
+        <p>
+          Explain to your examiner: <em>"GitHub Pages acts as a static web server. Because TaskFlow uses vanilla HTML, CSS, JavaScript, and client-side LocalStorage, it requires zero server runtime, zero database hosting costs, and runs lightning-fast across any device or operating system."</em>
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('deployModal').classList.remove('open')">Got it! Close Guide</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Standalone Script -->
+  <script type="module" src="./script.js"></script>
+
+  <!-- Helper for downloading raw files directly from the browser -->
+  <script>
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type: type || 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+
+    async function downloadAllFiles() {
+      try {
+        const [htmlRes, cssRes, jsRes] = await Promise.all([
+          fetch('./index.html').then(r => r.text()),
+          fetch('./style.css').then(r => r.text()),
+          fetch('./script.js').then(r => r.text())
+        ]);
+
+        downloadFile('index.html', htmlRes, 'text/html');
+        setTimeout(() => downloadFile('style.css', cssRes, 'text/css'), 400);
+        setTimeout(() => downloadFile('script.js', jsRes, 'application/javascript'), 800);
+      } catch (e) {
+        console.error('File download helper error:', e);
+      }
+    }
+  </script>
+
+</body>
+</html>
